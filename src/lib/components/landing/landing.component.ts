@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
 import { UamEnvironmentService } from '../../services/uam-environment.service';
 import { UserSessionService } from '../../services/user-session.service';
+import * as _ from 'lodash';
 
 @Component({
 	selector: 'lry-landing',
@@ -19,8 +19,7 @@ export class LandingComponent implements OnInit {
 	constructor(
 		private _userSession: UserSessionService, 
 		private _uamEnvironmentService: UamEnvironmentService, 
-		private _httpObj: HttpClient,
-		private _currentRoute: ActivatedRoute
+		private _httpObj: HttpClient
 	) { }
 
 	async ngOnInit() {

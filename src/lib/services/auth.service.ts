@@ -135,12 +135,25 @@ export class AuthService {
 	 */
 	_sessionVerifiedHandler(dontRedirect?: boolean, state?: string): void{
 		if(!dontRedirect){
-			let landingPage = '/landing';
-			if(state !== undefined){
-				landingPage += `?state=${state}`;
-			}
 			//Verify that the silent authentication is working and set the correct timer
 			this._initializeSilentLogin();
+			let landingPage = '/landing';
+			let redirection;
+			if(state !== undefined){
+				landingPage += `?state=${state}`;
+				try{
+					let decodedParam = AuthService.base64UrlDecode(state);
+					let stateObj = JSON.parse(decodedParam);
+					if(_.get(stateObj,'redirectUri')){
+						this._router.navigateByUrl(stateObj.redirectUri,{state: stateObj});
+						return;
+					}
+				}
+				catch(jsonError){
+					console.debug('Landing was supplied a state param but it was invalid JSON...', { stateParam: state });
+				}
+			}
+			
 			//TODO should we look for custom route somewhere???
 			this._router.navigateByUrl(landingPage,{state: {state}});
 		}

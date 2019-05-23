@@ -6,11 +6,10 @@
 # Using this Module
 
 To use this module you must provide the following in your application:
-1. Import or lazy load the module into your app module, see angular documentation for more details.
-2. Setup the Auth Module Router 
-	- The Auth Module provides routes (see below) and these must all be exposed under `/auth`
+1. Import the module into your app module, see angular documentation for more details.
 3. Provide a `/landing` route
 	- You can see below for more details but this will be the route that the user lands post authentication
+	- a test landing route is provided by the auth module at /auth/landing
 4. Inject the UserSessionService
 	- This is the main service you will interact with as an Application developer
 	- It will be used to get to see if the session is active, information about the user (such as Roles and user Information)
