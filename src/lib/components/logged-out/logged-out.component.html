@@ -1,0 +1,10 @@
+
+<div *ngIf="__cause">
+	<h1>You were logged out automatically!</h1>
+	<p>This was caused by ({{__cause.error}}).</p>
+	<p>{{__cause.description}}</p>
+</div>
+<div *ngIf="!__cause">
+	<h1>You have been successfully logged out!</h1>
+</div>
+<p>To login again please visit the <a href="/auth/login">login</a> page.</p>

@@ -1,0 +1,14 @@
+.cache
+.history
+.nyc_output
+coverage
+cypress/videos
+dist
+.vscode
+node_modules
+
+environment-details\.json
+
+# System Files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,49 @@
+{
+	"name": "@monstermakes/larry-identity-angular",
+	"description": "Angular module that provides user and authorization/authentication service based on auth0.",
+	"version": "0.0.1",
+	"publishConfig": {},
+	"files": [
+		"dist"
+	],
+	"bin": {},
+	"scripts": {
+		"lint": "echo '=> Linting... ' && ng lint",
+		"lint-fix": "echo '=> Fixing Linting errors...' && ng lint --fix",
+		"prepublishOnly": "npm run build && echo '=> Releasing larry-identity-angular lib...' && npm run test",
+		"readiness-check": "echo '=> Checking Readiness' && npm test",
+		"test": "echo '=> Verifying...' && npm run lint && npm run test-coverage",
+		"test-coverage": "echo '=> TODO Run cypress Tests w/ Coverage...'",
+		"clean-build": "echo '=> Cleaning larry-identity-angular lib...' && rm -rf dist/larry-identity-angular",
+		"build-watch": "echo '=> Building larry-identity-angular lib...' && npm run clean-build && ng build larry-identity-angular --watch",
+		"build": "echo '=> Building larry-identity-angular lib...' && npm run clean-build && ng build larry-identity-angular",
+		"start": "npm run build-watch"
+	},
+	"peerDependencies": {
+		"jwt-decode": "^2.2.0",
+		"node-forge": "^0.8.3"
+	},
+	"devDependencies": {
+		"@angular/common": "~7.2.0",
+		"@angular/compiler": "^7.2.15",
+		"@angular/core": "~7.2.0",
+		"@angular/router": "~7.2.0",
+		"rxjs": "~6.3.3",
+		"service": "^0.1.4",
+		"tslib": "^1.9.0",
+		"zone.js": "~0.8.26",
+		"@angular-devkit/build-angular": "~0.13.0",
+		"@angular-devkit/build-ng-packagr": "~0.13.0",
+		"@angular/cli": "~7.3.8",
+		"@angular/compiler-cli": "~7.2.0",
+		"@angular/language-service": "~7.2.0",
+		"@types/node": "~8.9.4",
+		"@types/lodash": "^4.14.129",
+		"codelyzer": "~4.5.0",
+		"ts-node": "~7.0.0",
+		"tslint": "~5.11.0",
+		"ng-packagr": "^4.2.0",
+		"tsickle": ">=0.34.0",
+		"typescript": "~3.2.2"
+	}
+}
