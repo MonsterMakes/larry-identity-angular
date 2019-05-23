@@ -133,7 +133,8 @@ export class AuthService {
 	/**
 	 * Called when the user session has been verified and the user is logged in
 	 */
-	_sessionVerifiedHandler(dontRedirect?: boolean, state?: string): void{
+	async _sessionVerifiedHandler(dontRedirect?: boolean, state?: string){
+		await this._uamEnvironmentService.whenLoaded();
 		if(!dontRedirect){
 			//Verify that the silent authentication is working and set the correct timer
 			this._initializeSilentLogin();
@@ -153,6 +154,8 @@ export class AuthService {
 					console.debug('Landing was supplied a state param but it was invalid JSON...', { stateParam: state });
 				}
 			}
+			//We no longer need the code_verifier, so remove it from session storage
+			window.sessionStorage.removeItem(`${this._uamEnvironmentService.apiUrl}code_verifier`);
 			
 			//TODO should we look for custom route somewhere???
 			this._router.navigateByUrl(landingPage,{state: {state}});
@@ -299,6 +302,10 @@ export class AuthService {
 					// if the session will expire before the next refresh
 					if(sessionExpiresDateEpoch <= nextSilentAuthenticationPollEpoch){
 						await this.exchangeCodeForToken(event.data.code);
+					}
+					else{
+						//We no longer need the code_verifier, so remove it from session storage
+						window.sessionStorage.removeItem(`${this._uamEnvironmentService.apiUrl}code_verifier`);
 					}
 				}
 			}
