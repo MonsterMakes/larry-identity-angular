@@ -140,7 +140,13 @@ export class AuthService {
 			this._initializeSilentLogin();
 			let landingPage = '/landing';
 			let redirection;
-			if(state !== undefined){
+
+			// If the state is not passed in explicitly try and grab it from the query params
+			if(state === undefined){
+				const urlParams = new URLSearchParams(window.location.search);
+				state = urlParams.get('state');
+			}
+			if(!_.isNil(state)){
 				landingPage += `?state=${state}`;
 				try{
 					let decodedParam = AuthService.base64UrlDecode(state);
