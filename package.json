@@ -1,7 +1,7 @@
 {
 	"name": "@monstermakes/larry-identity-angular",
 	"description": "Angular module that provides user and authorization/authentication service based on auth0.",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"publishConfig": {},
 	"files": [
 		"dist"

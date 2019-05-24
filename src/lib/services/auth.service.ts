@@ -71,6 +71,7 @@ export class AuthService {
 	 * This completes the authorization code grant flow.
 	 */
 	async exchangeCodeForToken(authorizationCode: string, dontRedirect?: boolean, state?: string): Promise<any>{
+		console.debug(`Exchanging code for tokens...`);
 		// when we have the uam environment details
 		await this._uamEnvironmentService.whenLoaded();
 
@@ -310,6 +311,7 @@ export class AuthService {
 						await this.exchangeCodeForToken(event.data.code);
 					}
 					else{
+						console.debug('Session is still valid, no action taken...');
 						//We no longer need the code_verifier, so remove it from session storage
 						window.sessionStorage.removeItem(`${this._uamEnvironmentService.apiUrl}code_verifier`);
 					}
