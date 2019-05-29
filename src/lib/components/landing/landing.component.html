@@ -4,7 +4,11 @@
 <p *ngIf='!__sessionValid'>
 	Your Session is NOT Valid!!!
 </p>
+<span *ngIf='__userRoles'>Active AccountId:<pre>{{__activeAccount | json}}</pre></span>
 <span *ngIf='__userRoles'>ROLES:<pre>{{__userRoles | json}}</pre></span>
+
+<span *ngIf='__accessInfo'>ACCESS INFO:<pre>{{__accessInfo | json}}</pre></span>
+
 <span *ngIf='__userInfo'>USER INFO:<pre>{{__userInfo | json}}</pre></span>
 
 <button (click)="checkHealth();">check health</button>

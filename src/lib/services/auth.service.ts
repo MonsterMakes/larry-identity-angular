@@ -10,6 +10,11 @@ import { ErrorDetails } from '../interfaces/error-details.interface';
 
 const SILENT_AUTHENTICATION_POLLING_INTERVAL = 30000;
 const SILENT_AUTHENTICATION_TIMEOUT = 10000;
+
+export interface StateParamObject{
+	redirectUri?: string; //if supplied the auth module will redirect the browser to this url upon authentication.
+	activeAccountId?: string; //if supplied the auth system will validate and set this in the accessToken as a custom claim
+}
 @Injectable({
 	providedIn: 'root'
 })
@@ -36,7 +41,7 @@ export class AuthService {
 	 * Starts the authorization code grant with PKCE flow.
 	 * NOTE: This will cause the browser to be redirected, therefore the promise will NOT return.
 	 */
-	async login(state: string){
+	async login(state?: object){
 		// when we have the uam environment details
 		await this._uamEnvironmentService.whenLoaded();
 				
@@ -70,7 +75,7 @@ export class AuthService {
 	 * Exchange the authorization code for the Token.
 	 * This completes the authorization code grant flow.
 	 */
-	async exchangeCodeForToken(authorizationCode: string, dontRedirect?: boolean, state?: string): Promise<any>{
+	async exchangeCodeForToken(authorizationCode: string, dontRedirect?: boolean): Promise<any>{
 		console.debug(`Exchanging code for tokens...`);
 		// when we have the uam environment details
 		await this._uamEnvironmentService.whenLoaded();
@@ -105,7 +110,7 @@ export class AuthService {
 				return this._userSession.__setSessionDetails(data);
 			})
 			.then(async () => {
-				return this._sessionVerifiedHandler(dontRedirect,state);
+				return this._sessionVerifiedHandler(dontRedirect);
 			})
 			.catch((err: any) => {
 				console.error(`Failed to exchange code for token (${tokenUrl}), contact support.`, {
@@ -134,39 +139,32 @@ export class AuthService {
 	/**
 	 * Called when the user session has been verified and the user is logged in
 	 */
-	async _sessionVerifiedHandler(dontRedirect?: boolean, state?: string){
+	async _sessionVerifiedHandler(dontRedirect?: boolean, state?: object){
 		await this._uamEnvironmentService.whenLoaded();
+		
+		//We no longer need the code_verifier, so remove it from session storage
+		window.sessionStorage.removeItem(`${this._uamEnvironmentService.apiUrl}code_verifier`);
+
 		if(!dontRedirect){
 			//Verify that the silent authentication is working and set the correct timer
+			//We are doing it here so that silent Authentication is not enabled inside silent Authentication
 			this._initializeSilentLogin();
 			let landingPage = '/landing';
-			let redirection;
 
-			// If the state is not passed in explicitly try and grab it from the query params
-			if(state === undefined){
-				const urlParams = new URLSearchParams(window.location.search);
-				state = urlParams.get('state');
-			}
-			if(!_.isNil(state)){
-				landingPage += `?state=${state}`;
-				try{
-					let decodedParam = AuthService.base64UrlDecode(state);
-					let stateObj = JSON.parse(decodedParam);
-					if(_.get(stateObj,'redirectUri')){
-						this._router.navigateByUrl(stateObj.redirectUri,{state: stateObj});
-						return;
-					}
-				}
-				catch(jsonError){
-					console.debug('Landing was supplied a state param but it was invalid JSON...', { stateParam: state });
-				}
-			}
-			//We no longer need the code_verifier, so remove it from session storage
-			window.sessionStorage.removeItem(`${this._uamEnvironmentService.apiUrl}code_verifier`);
+			// get the state with precedece (method param, query param, with {} fallback)
+			let stateObj = this._getStateParamObject(state);
+			let stateQueryParam = this._buildStateParam(state);
+
+			landingPage += `?state=${stateQueryParam}`;
 			
-			//TODO should we look for custom route somewhere???
-			this._router.navigateByUrl(landingPage,{state: {state}});
+			if(_.get(stateObj,'redirectUri')){
+				this._router.navigateByUrl(stateObj.redirectUri,{state: stateObj});
+				return;
+			}
+
+			this._router.navigateByUrl(landingPage,{state: {state: stateObj}});
 		}
+		
 	}
 	//--- END PUBLIC AUTH HANDLER METHODS ---//
 
@@ -191,7 +189,13 @@ export class AuthService {
 			let foundElem = document.querySelector('#silent-auth');
 			if(!foundElem){
 				let redirect_uri = `${window.location.origin}/auth/silent-code-callback`;
-				let state = '{}';
+				let accessToken = await this._userSession.getAccessToken();
+				let state = {};
+				if(accessToken){
+					state = {
+						activeAccountId: accessToken[this._uamEnvironmentService.activeAccountIdClaim]
+					};
+				}
 				this._silentLoginWindowElem = window.document.createElement('iframe');
 				this._silentLoginWindowElem.id = 'silent-auth';
 				this._silentLoginWindowElem.style.display = 'none';
@@ -308,7 +312,7 @@ export class AuthService {
 					let nextSilentAuthenticationPollEpoch = Date.now() + (2 * SILENT_AUTHENTICATION_POLLING_INTERVAL);	
 					// if the session will expire before the next refresh
 					if(sessionExpiresDateEpoch <= nextSilentAuthenticationPollEpoch){
-						await this.exchangeCodeForToken(event.data.code);
+						await this.exchangeCodeForToken(event.data.code, true);
 					}
 					else{
 						console.debug('Session is still valid, no action taken...');
@@ -392,6 +396,70 @@ export class AuthService {
 	/*********************************************************************************/
 	/*********************************************************************************/	
 
+	/**
+	 * Get the state object using the passed object first or second from the current query params, if none is found return an empty object
+	 */
+	_getStateParamObject(state?: StateParamObject): StateParamObject{
+		let stateObj;
+		if(!state){
+			const urlParams = new URLSearchParams(window.location.search);
+			let stateStr = urlParams.get('state');
+			if(stateStr === null){
+				stateObj = {};
+			}
+			else{
+				stateObj = this._decodeStateParam(stateStr);
+			}
+		}
+		else{
+			stateObj = state || {};
+		}
+		return stateObj;
+	}
+
+	/**
+	 * Produces a valid state Param (meainng base64URL json string), 
+	 * from either the passed in state object or the state string found in the current window's query params
+	 */
+	_buildStateParam(state?: StateParamObject): string {
+		let stateObj = this._getStateParamObject(state);
+
+		try{
+			let jsonStateStr = JSON.stringify(stateObj);
+			try{
+				let encodedStateStr = AuthService.base64UrlEncode(jsonStateStr);
+				return encodedStateStr;
+			}
+			catch(encodeError){
+				console.debug('Failed to encode state param.', { state: jsonStateStr, error: encodeError });
+			}
+		}
+		catch(jsonStringifyError){
+			console.debug('The provided state param is not a valid json object, state property must be a valid (non cyclical) json string.', { state: state, error: jsonStringifyError });
+			throw jsonStringifyError;
+		}
+		
+	}
+	_decodeStateParam(base64UrlStateStr: string): StateParamObject{
+		let stateObj = null;
+		let decodedStateStr = null;
+		try{
+			decodedStateStr = AuthService.base64UrlDecode(base64UrlStateStr);
+		}
+		catch(stateError){
+			console.debug('Failed to decode base64Url state param, attempting to parse a raw json string...', { base64UrlStateStr: decodedStateStr, error: stateError });
+			decodedStateStr = base64UrlStateStr;
+		}
+		try{
+			stateObj = JSON.parse(decodedStateStr);
+			return stateObj;
+		}
+		catch(jsonError){
+			console.debug('State param is not a valid json object, state property must be a valid json string.', { base64UrlStateStr: decodedStateStr, error: jsonError });
+			throw jsonError;
+		}
+	}
+
 	_buildLoggedOutUrl(cause): string {
 		let logoutUrl = new URL(`${window.location.origin}/auth/logged-out`);
 		let params = <any>{};
@@ -418,7 +486,7 @@ export class AuthService {
 		return logoutUrl.toString();
 	}
 
-	_buildLoginUrl(redirectUri: string, state: string, code_challenge: string, prompt?: string): string {
+	_buildLoginUrl(redirectUri: string, state: object, code_challenge: string, prompt?: string): string {
 		let loginUrl = new URL(`${this._uamEnvironmentService.apiUrl}login`);
 
 		// here we encode the authorization request
@@ -426,7 +494,7 @@ export class AuthService {
 			redirect_uri: redirectUri,
 			client_id: this._uamEnvironmentService.clientId,
 			code_challenge: code_challenge,
-			state: state,
+			state: this._buildStateParam(state),
 			prompt: prompt
 		};
 		let loginParams = new URLSearchParams(<any> _.omitBy(params, _.isNil));

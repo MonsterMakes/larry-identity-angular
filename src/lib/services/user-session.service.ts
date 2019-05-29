@@ -114,10 +114,33 @@ export class UserSessionService {
 	async getUserRoles(): Promise<object>{
 		let sessionDetails = await this.getSessionDetails();
 		if(sessionDetails){
-			let token = sessionDetails.access_token;
+			let token = sessionDetails.id_token;
 			let jwt = jwt_decode(token);
 			if(jwt[this._uamEnvironmentService.roleClaim]){
 				return jwt[this._uamEnvironmentService.roleClaim];
+			}
+			else{
+				return [];
+			}
+			return jwt;
+		}
+		else{
+			return null;
+		}
+	}
+
+	/**
+	 * Gets the current active account id.
+	 * 
+	 * Note: This does not check the validity of the access token just that its not malformed or expired.
+	 */
+	async getActiveAccountId(): Promise<object>{
+		let sessionDetails = await this.getSessionDetails();
+		if(sessionDetails){
+			let token = sessionDetails.access_token;
+			let jwt = jwt_decode(token);
+			if(jwt[this._uamEnvironmentService.activeAccountIdClaim]){
+				return jwt[this._uamEnvironmentService.activeAccountIdClaim];
 			}
 			else{
 				return [];

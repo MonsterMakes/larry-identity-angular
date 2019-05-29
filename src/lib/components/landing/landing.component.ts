@@ -12,6 +12,8 @@ import * as _ from 'lodash';
 export class LandingComponent implements OnInit {
 	__sessionValid: boolean;
 	__userInfo: any;
+	__activeAccount: any;
+	__accessInfo: any;
 	__userRoles: any;
 	__response: any;
 	__error: any;
@@ -27,8 +29,10 @@ export class LandingComponent implements OnInit {
 		if (sessionDetails) {
 			this.__sessionValid = true;
 		}
+		this.__activeAccount = await this._userSession.getActiveAccountId();
 		this.__userRoles = await this._userSession.getUserRoles();
 		this.__userInfo = await this._userSession.getIdToken();
+		this.__accessInfo = await this._userSession.getAccessToken();
 	}
 
 	async checkHealth() {

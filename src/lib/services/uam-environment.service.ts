@@ -7,9 +7,8 @@ export interface UamEnvironmentDetails{
 	apiUrl: string; //the apiUrl of the UAM services (User and Account Management)
 	clientId: string;
 	cachedAt: number; //epoch time when this object was cached
-}
-export interface EnvironmentDetails{
-	uam: UamEnvironmentDetails
+	activeAccountIdClaim: string;
+	roleClaim: string;
 }
 
 @Injectable({
@@ -69,6 +68,10 @@ export class UamEnvironmentService {
 						})
 						.then((response: Response) => {
 							return response.json();
+						})
+						.then((data)=>{
+							// dont need the whole environment object
+							return data.uam;
 						});
 				}
 			})
@@ -110,12 +113,15 @@ export class UamEnvironmentService {
 		return baseUrl;
 	}
 	get apiUrl(): string {
-		return _.get(this._environmentDetails,'uam.apiUrl');
+		return _.get(this._environmentDetails,'apiUrl');
 	}
 	get clientId(): string {
-		return _.get(this._environmentDetails,'uam.clientId');		
+		return _.get(this._environmentDetails,'clientId');		
 	}
 	get roleClaim(): string {
-		return _.get(this._environmentDetails,'uam.roleClaim');
+		return _.get(this._environmentDetails,'roleClaim');
+	}
+	get activeAccountIdClaim(): string {
+		return _.get(this._environmentDetails,'activeAccountIdClaim');
 	}
 }
