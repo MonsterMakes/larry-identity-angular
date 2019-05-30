@@ -8,7 +8,7 @@ import * as _ from 'lodash';
 import * as forge from 'node-forge';
 import { ErrorDetails } from '../interfaces/error-details.interface';
 
-const SILENT_AUTHENTICATION_POLLING_INTERVAL = 30000;
+const SILENT_AUTHENTICATION_POLLING_INTERVAL = 60000;
 const SILENT_AUTHENTICATION_TIMEOUT = 10000;
 
 export interface StateParamObject{
